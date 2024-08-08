@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Task List</h1>
+    <div id="tasks" class="list-group"></div>
+    <div id="context">
+
+    </div>
+</div>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tasks = [
+            { id: 1, name: "Task 1" },
+            { id: 2, name: "Task 2" },
+            { id: 3, name: "Task 3" },
+            { id: 4, name: "Task 4" },
+            { id: 5, name: "Task 5" },
+            { id: 6, name: "Task 6" }
+        ];
+
+        const tasksContainer = document.getElementById("tasks");
+
+        tasks.forEach(task => {
+            const taskElement = document.createElement("div");
+            taskElement.className = "list-group-item d-flex justify-content-between align-items-center";
+
+            taskElement.innerHTML = `
+                <span>${task.name}</span>
+                <button class="btn btn-primary btn-sm" id="update" value=${task.name}>Update</button>
+            `;
+
+            tasksContainer.appendChild(taskElement);
+        });
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+        const socket = new SockJS("/ws");
+        console.log("socket: " + socket);
+        const stompClient = Stomp.over(socket);
+        console.log("stomp client: " + stompClient);
+
+        stompClient.connect({}, function (frame) {
+            console.log("Connected: " + frame);
+            stompClient.subscribe("/topic/updates", function (message) {
+                const messagesDiv = document.getElementById("context");
+                messagesDiv.innerHTML += '<p>' + message.body + '</p>';
+            });
+        }, function (err) {
+            console.error("STOMP error", err);
+        });
+
+        document.getElementById('update').onclick = function () {
+            const message = document.getElementById("update").value;
+            stompClient.send("/app/send", {}, message+" is updated");
+        };
+    });
+
+
+</script>
+</body>
+</html>
